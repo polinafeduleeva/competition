@@ -45,8 +45,8 @@ class Window(QMainWindow):
             if not os.path.isfile(self.img_name):
                 raise Exception
             img = QPixmap(self.img_name)
-            w, h = img.width(), img.height()
-            img = img.scaled(int(0.1 * w), int(0.1 * h))
+            wi, h = img.width(), img.height()
+            img = img.scaled(int(0.1 * wi), int(0.1 * h))
             self.label_img.setPixmap(img)
             self.label_img.resize(img.width(), img.height())
             self.label_img.move((WINDOW_W - img.width()) // 2, 50)
