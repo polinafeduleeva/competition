@@ -1,33 +1,51 @@
 from ultralytics import YOLO
 from PIL import Image
-import pytesseract
+import os
 
 # Подгружается обученная нейронная сеть и tesseract
-model = YOLO('weights/best_50.pt')
-pytesseract.pytesseract.tesseract_cmd = r'C:\Tesseract\tesseract.exe'
+model_cut = YOLO('weights/best_50.pt')
+model_numbers = YOLO('weights/last_numbers.pt')
 
 
 # Функция для определения текста на картинке
 def pred_text(img):
-    # нужный объект находится на изображении с помощью нейросети и вырезается
-    res = model(img)
-    if res:
-        img = Image.open(img)
-        box = [int(float(elem)) for elem in res[0].boxes.xyxy[0]]
-        img = img.crop(box)
-        #  полученное изображение загружается в pytesseract, где определяется текст
-        txt = pytesseract.image_to_string(img, lang='eng',
-                                          config='-c tessedit_char_whitelist=0123456789 --psm 11 --oem 3')
+    # с помощью функции cut_img из изображения вырезается нужный нам кусок с прибором
+    img2 = cut_img(img)
+    # ненйронная сеть определяет цифры на изображении
+    res = model_numbers.predict(img2)
+    arr = []
+    # результаты преобразуются в массив с элементами типа (класс, x координата левого верхнего угла,
+    # у координата левого верхнего угла)
+    for i in range(sum([1 for _ in res[0].boxes.xyxy])):
+        arr.append((int(res[0].boxes.cls[i]), (float(res[0].boxes.xyxy[i][0]) // 75,
+                                               float(res[0].boxes.xyxy[i][1]) // 75)))
+    # полученный список сортируется по возрастанию координат
+    # функция возвращает последовательность цифр на картинке в виде строки
+    return ''.join([str(elem[0]) for elem in sorted(arr, key=lambda x: (x[1][0], 0 - x[1][1]))])
 
-        txt = txt.replace(' ', '')
-        txt = txt.replace('\n', '')
-        txt = txt.replace('\t', '')
-        if txt:
-            return txt
-        else:
-            return 'текст не распознан'
+
+def cut_img(img):
+    res = model_cut.predict(img)
+    img = Image.open(img)
+    if res:
+        if res[0]:
+            box = [int(float(elem)) for elem in res[0].boxes.xyxy[0]]
+            img = img.crop(box)
+    return img
+
+
+def predict_path(dir_path):
+    # функция, проходящая по изображениям в папке и сохраняющая результаты распознавания с них в текстовом файле
+    f = open('results.txt', 'w')
+    for file in os.listdir(dir_path):
+        if os.path.isfile(f'{dir_path}/{file}'):
+            f.write(file + ' ' + pred_text(f'{dir_path}/{file}') + '\n')
+    f.close()
 
 
 if __name__ == '__main__':
-    print(pred_text("test/images/20210806_17_07_31_000_wFlY39NOieR2fsNI4wU820Izeog2_F_3456_4608_jpg.rf."
-                    "1ca3809a0ce2c80b79ca80a65ff10c20.jpg"))
+    # код запрашивает папку с изображениями, в выбранной папке проходит по изображениям и распознаёт их
+    print('Введите папку с изображениями')
+    path = input()
+    predict_path(path)
+    print('Результаты сохранены в файле results.txt')
