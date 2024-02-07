@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QFileDialog,
 from PyQt5.QtGui import QPixmap
 from predict_text import pred_text
 import sys
+import os
 
 
 WINDOW_W = 650
@@ -41,6 +42,8 @@ class Window(QMainWindow):
         # открывается диалог с выбором картинки. Для удобства картинка отображается в окне приложения
         self.img_name = QFileDialog.getOpenFileName(self, 'Open file', '/home')[0]
         try:
+            if not os.path.isfile(self.img_name):
+                raise Exception
             img = QPixmap(self.img_name)
             w, h = img.width(), img.height()
             img = img.scaled(int(0.1 * w), int(0.1 * h))
