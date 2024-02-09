@@ -2,7 +2,7 @@ from ultralytics import YOLO
 from PIL import Image
 import os
 
-# Подгружается обученная нейронная сеть и tesseract
+# Подгружаются нейронные сети
 model_cut = YOLO('weights/best_50.pt')
 model_numbers = YOLO('weights/last_numbers.pt')
 
@@ -25,6 +25,7 @@ def pred_text(img):
 
 
 def cut_img(img):
+    # Функция, для вырезания прибора с заданного изображения
     res = model_cut.predict(img)
     img = Image.open(img)
     if res:
@@ -39,7 +40,7 @@ def predict_path(dir_path):
     f = open('results.txt', 'w')
     for file in os.listdir(dir_path):
         if os.path.isfile(f'{dir_path}/{file}'):
-            f.write(file + ' ' + pred_text(f'{dir_path}/{file}') + '\n')
+            f.write(file + ',' + pred_text(f'{dir_path}/{file}') + '\n')
     f.close()
 
 
